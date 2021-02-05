@@ -1,0 +1,14 @@
+
+
+#1-Download/Extract/Install pygeoip from zip package : https://pypi.org/project/pygeoip/#modal-close
+## unzip pygeoip-0.3.2.zip 
+## ls
+## cd pygeoip-0.3.2/
+## ls
+## python setup.py install
+
+#2-Download/Extract/Install scapy from zip package : https://github.com/secdev/scapy
+## unzip scapy-master.zip 
+## cd scapy-master/
+## python setup.py install
+## scapy
