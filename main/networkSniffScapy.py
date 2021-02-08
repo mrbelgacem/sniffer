@@ -1,5 +1,7 @@
 
+import scapy
 from scapy import all
+from scapy.utils import hexdump
 import pygeoip
 from IPy import IP as IPLIB
 import socket
@@ -12,8 +14,7 @@ import logging
 def createInitLogger(logLvl=logging.INFO, consol=False):
     # log level : DEBUG, INFO, WARNING, ERROR
     
-    # create log directory if not exist
-    Path(pathLogDir).mkdir(parents=True, exist_ok=True)
+
     
     if consol:
         # system consol out
@@ -24,6 +25,9 @@ def createInitLogger(logLvl=logging.INFO, consol=False):
                             level=logLvl)##       
     else: 
         # log file out
+        # create log directory if not exist
+        Path(pathLogDir).mkdir(parents=True, exist_ok=True)    
+        
         logging.basicConfig(filename=pathLogFile, 
                             format='%(asctime)s : %(levelname)s : %(message)s', 
                             datefmt='%Y/%m/%d %H:%M:%S', 
@@ -64,8 +68,8 @@ def printPacket(sourceIP,destinationIP):
 
 def startMonitoring(pkt):
     listPacket = pkt.layers()
-    # log level / sys consol output
-    createInitLogger(logging.DEBUG, False)
+    # log level / sys consol output (true)
+    createInitLogger(logging.DEBUG, True)
 
     try:      
         if pkt.haslayer('IP'):
@@ -87,8 +91,15 @@ def startMonitoring(pkt):
                 # call the print packet function
                 logging.info('\r\n'+'=====Oo++oO=====Oo++oO=====')
                 logging.info(printPacket(sourceIP, destinationIP))
-                for subPkt in listPacket:
-                    logging.debug(subPkt)
+                
+                # test if packet contains RAW layer
+                raw = pkt.lastlayer()
+                if isinstance (raw, scapy.packet.Raw):
+                    logging.debug(pkt.show())
+                    logging.debug('Raw layer decode data to human readable')
+                    logging.debug(hexdump(raw))
+                #for subPkt in listPacket:
+                    #logging.debug(subPkt)
             else:
                 conversations[uniqueKey] = +1
         
