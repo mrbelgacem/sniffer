@@ -12,17 +12,15 @@ import logging
 
 
 def createInitLogger(logLvl=logging.INFO, consol=False):
-    # log level : DEBUG, INFO, WARNING, ERROR
-    
-
-    
+    # log level : DEBUG, INFO, WARNING, ERROR  
     if consol:
         # system consol out
         logging.basicConfig(stream=sys.stdout, 
                             format='%(asctime)s : %(levelname)s : %(message)s', 
                             datefmt='%Y/%m/%d %H:%M:%S', 
                             encoding='utf-8', 
-                            level=logLvl)##       
+                            level=logLvl)
+        logging.info('logger ON - system consol out')
     else: 
         # log file out
         # create log directory if not exist
@@ -33,6 +31,7 @@ def createInitLogger(logLvl=logging.INFO, consol=False):
                             datefmt='%Y/%m/%d %H:%M:%S', 
                             encoding='utf-8', 
                             level=logLvl)##stream=sys.stdout
+        print('logger ON - file out : ' + pathLogFile )
 
 def getInfoGeoIP(ipAddress):
     
@@ -68,21 +67,25 @@ def printPacket(sourceIP,destinationIP):
 
 def startMonitoring(pkt):
     listPacket = pkt.layers()
-    # log level / sys consol output (true)
-    createInitLogger(logging.DEBUG, True)
+
+    no_switch = False
+    
+    IPLayer = scapy.layers.inet.IP
+    RawLayer = scapy.packet.Raw
+    #print(type(IPName))
 
     try:      
-        if pkt.haslayer('IP'):
+        if pkt.haslayer(IPLayer):
             # get the source IP address
-            sourceIP = pkt.getlayer('IP').src
+            sourceIP = pkt.getlayer(IPLayer).src
             # get the destination IP address
-            destinationIP = pkt.getlayer('IP').dst
+            destinationIP = pkt.getlayer(IPLayer).dst
                       
             if(destinationIP in exclude_ips):
                 return;
             
             # generate a unique key to avoid duplication
-            uniqueKey = sourceIP+destinationIP
+            uniqueKey = sourceIP+'#'+destinationIP
             
             # already processed the packet --> don't proceed further
             if uniqueKey not in conversations:
@@ -91,23 +94,24 @@ def startMonitoring(pkt):
                 # call the print packet function
                 logging.info('\r\n'+'=====Oo++oO=====Oo++oO=====')
                 logging.info(printPacket(sourceIP, destinationIP))
-                
+
                 # test if packet contains RAW layer
-                raw = pkt.lastlayer()
-                if isinstance (raw, scapy.packet.Raw):
-                    logging.debug(pkt.show())
+                if pkt.haslayer(RawLayer):
+                    #logging.debug(pkt.show())
                     logging.debug('Raw layer decode data to human readable')
-                    logging.debug(hexdump(raw))
+                    logging.debug(hexdump(pkt.getlayer(RawLayer).load))
                 #for subPkt in listPacket:
                     #logging.debug(subPkt)
             else:
                 conversations[uniqueKey] = +1
         
     except Exception as ex:
-        logging.error("Exception ex:" + str(ex))
+        logging.error("Exception : " + str(ex))
         pass
 
 def main():
+    # log level / sys consol output (true)
+    createInitLogger(logging.DEBUG, True)    
     # start sniffing by filtering only the IP packets without storing anything inside the memory.
     all.sniff(prn=startMonitoring,store=0,filter="ip")
     
